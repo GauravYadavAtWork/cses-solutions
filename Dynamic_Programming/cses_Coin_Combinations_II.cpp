@@ -3,36 +3,70 @@ using namespace std;
 typedef long long ll;
 #define mod 1000000007
 
-// best solution
-class Solution {
-public:
-    int change(int amount, vector<int>& coins) {
-        vector<unsigned int> dp(amount+1, 0);
-        dp[0] = 1;
+// 1 1D array (fuck you optimization)
+void solve(vector<int>& coins, int cost) {
+    int n = coins.size();
+    vector<int> dp(cost + 1, 0);
+    dp[cost] = 1;
 
-        for(auto coin : coins) {
-            for(int i = coin; i <= amount; i++) {
-                dp[i] += dp[i-coin];
-            }
+    for (int i = n - 1; i >= 0; i--) {
+        for (int j = cost; j >= 0; j--) {
+            int count = 0;
+            if (j + coins[i] <= cost) count += dp[j + coins[i]];
+            count += dp[j];
+            dp[j] = count % mod;
         }
-
-        return dp[amount];
     }
-};
+    cout << dp[0];
+}
+
+// optimising the space
+void solve3(vector<int>& coins, int cost) {
+    int n = coins.size();
+    vector<int> next(cost + 1, 0), curr(cost + 1, 0);
+    next[cost] = 1;
+    for (int i = n - 1; i >= 0; i--) {
+        for (int j = cost; j >= 0; j--) {
+            int count = 0;
+            if (j + coins[i] <= cost) count += curr[j + coins[i]] % mod;
+            count += next[j] % mod;
+            curr[j] = count % mod;
+        }
+        next = curr;
+    }
+    cout << next[0];
+}
+
+// transforming recursive to iterative
+void solve2(vector<int>&coins, int cost){
+    int n = coins.size();
+    vector<vector<int>> dp (n+1, vector<int>(cost+1, 0));
+    for(int i=0;i<=n;i++) dp[i][cost] = 1; // base case
+
+    for(int i=n-1;i>=0;i--){
+        for(int j=cost;j>=0;j--){
+            int count = 0;
+            if(j+coins[i] <= cost) count += (dp[i][j + coins[i]])%mod;
+            count += (dp[i+1][j])%mod;
+            dp[i][j] = count;
+        }
+    }
+    cout<<dp[0][0];
+}
 
 // recursive function O(cost*n)
-int h(vector<int>&coins, int i, int cost, vector<vector<int>>&dp){
-    if(cost<=0) return cost == 0;
+int h(vector<int>&coins, int i, int cost, int t_cost, vector<vector<int>>&dp){
+    if(cost>=t_cost) return cost == t_cost;
     if(i==coins.size()) return 0; // coins over
     if(dp[i][cost]!=-1) return dp[i][cost];
-    int count = h(coins, i, cost - coins[i], dp); count%=mod;
-    count += h(coins, i+1, cost, dp); count%=mod;
+    int count = h(coins, i, cost + coins[i], t_cost, dp); count%=mod;
+    count += h(coins, i+1, cost, t_cost, dp); count%=mod;
     return dp[i][cost] = count;
 }
 
-void solve(vector<int>&coins, int cost){
+void solve1(vector<int>&coins, int cost){
     vector<vector<int>> dp (coins.size(), vector<int>(cost+1, -1));
-    cout<<h(coins, 0, cost, dp);
+    cout<<h(coins, 0, 0, cost, dp);
 }
 
 int main(){
